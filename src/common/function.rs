@@ -1,29 +1,28 @@
 use crate::common::variable::Variable;
 
 pub trait Function {
-  fn exec(&mut self, input: Variable) -> Variable {
-    let y = self.forward(input);
+  fn exec(&mut self) -> Variable {
+    let y = self.forward();
     Variable::new(y)
   }
 
-  fn forward(&mut self, input: Variable) -> f32;
+  fn forward(&self) -> f32;
   fn backward(&self, gy: f32) -> f32;
 }
 
-pub struct Square {
-  input: Variable,
+pub struct Square<'a> {
+  input: &'a Variable,
 }
 
-impl Square {
-  pub fn new() -> Square {
-    Square{ input: Variable::new(0.0) }
+impl<'a> Square<'a> {
+  pub fn new(input: &'a Variable) -> Square<'a> {
+    Square{ input }
   }
 }
 
-impl Function for Square {
-  fn forward(&mut self, input: Variable) -> f32 {
-    let x = input.data;
-    self.input = input;
+impl<'a> Function for Square<'a> {
+  fn forward(&self) -> f32 {
+    let x = self.input.data;
     x * x
   }
 
@@ -33,20 +32,19 @@ impl Function for Square {
   }
 }
 
-pub struct Exp {
-  input: Variable,
+pub struct Exp<'a> {
+  input: &'a Variable,
 }
 
-impl Exp {
-  pub fn new() -> Exp {
-    Exp { input: Variable::new(0.0) }
+impl<'a> Exp<'a> {
+  pub fn new(input: &'a Variable) -> Exp<'a> {
+    Exp { input }
   }
 }
 
-impl Function for Exp {
-  fn forward(&mut self, input: Variable) -> f32 {
-    let x = input.data;
-    self.input = input;
+impl<'a> Function for Exp<'a> {
+  fn forward(&self) -> f32 {
+    let x = self.input.data;
     x.exp()
   }
 
