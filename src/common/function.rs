@@ -1,55 +1,63 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::common::variable::Variable;
 
-pub trait Function {
-  fn exec(&mut self) -> Variable {
+#[derive(PartialEq, Debug)]
+pub enum Function {
+  Square{input: Rc<RefCell<Variable>>},
+  Exp{input: Rc<RefCell<Variable>>},
+  None
+}
+
+impl Function {
+  pub fn square(input: Rc<RefCell<Variable>>) -> Variable {
+    let s = Function::Square{input};
+    s.exec()
+  }
+
+  pub fn exp(input: Rc<RefCell<Variable>>) -> Variable {
+    let e = Function::Exp{input};
+    e.exec()
+  }
+
+  fn exec(mut self) -> Variable {
     let y = self.forward();
-    Variable::new(y)
+    Variable::new(y, self)
   }
 
-  fn forward(&self) -> f32;
-  fn backward(&self, gy: f32) -> f32;
-}
-
-pub struct Square<'a> {
-  input: &'a Variable,
-}
-
-impl<'a> Square<'a> {
-  pub fn new(input: &'a Variable) -> Square<'a> {
-    Square{ input }
-  }
-}
-
-impl<'a> Function for Square<'a> {
-  fn forward(&self) -> f32 {
-    let x = self.input.data;
-    x * x
+  fn forward(&mut self) -> f32 {
+    match self {
+      Function::Square{input} => {
+        let x = input.borrow().data;
+        x * x
+      },
+      Function::Exp{input} => {
+        let x = input.borrow().data;
+        x.exp()
+      },
+      _ => 0.0
+    }
   }
 
-  fn backward(&self, gy: f32) -> f32 {
-    let x = self.input.data;
-    2.0 * x * gy
-  }
-}
-
-pub struct Exp<'a> {
-  input: &'a Variable,
-}
-
-impl<'a> Exp<'a> {
-  pub fn new(input: &'a Variable) -> Exp<'a> {
-    Exp { input }
-  }
-}
-
-impl<'a> Function for Exp<'a> {
-  fn forward(&self) -> f32 {
-    let x = self.input.data;
-    x.exp()
+  pub fn backward(&self, gy: f32) -> f32 {
+    match self {
+      Function::Square{input} => {
+        let x = input.borrow().data;
+        2.0 * x * gy
+      },
+      Function::Exp{input} => {
+        let x = input.borrow().data;
+        x.exp() * gy
+      },
+      _ => 0.0
+    }
   }
 
-  fn backward(&self,gy: f32) -> f32 {
-    let x = self.input.data;
-    x.exp() * gy
+  pub fn input(&mut self) -> Rc<RefCell<Variable>> {
+    match self {
+      Function::Square{ input } => input.clone(),
+      Function::Exp{ input } => input.clone(),
+      Function::None => panic!(),
+    }
   }
 }

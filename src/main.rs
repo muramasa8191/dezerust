@@ -1,8 +1,9 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 mod common;
 use common::variable::Variable;
 use common::function::Function;
-use common::function::Square;
-use common::function::Exp;
 
 //fn numeric_diff(f: &mut impl Function, x: Variable, eps: f32) -> f32 {
 //    let x0 = Variable::new(x.data - eps);
@@ -13,20 +14,12 @@ use common::function::Exp;
 //}
 
 fn main() {
-    let mut x = Variable::new(0.5);
-    let mut a = Square::new(&x);
-    let mut ax = a.exec();
-    let mut b = Exp::new(&ax);
-    let mut bx = b.exec();
-    let mut c = Square::new(&bx);
+    let x = Rc::new(RefCell::new(Variable::new(0.5, Function::None)));
+    let s1 = Rc::new(RefCell::new(Function::square(x.clone())));
+    let e = Rc::new(RefCell::new(Function::exp(s1.clone())));
+    let y = Rc::new(RefCell::new(Function::square(e.clone())));
 
-    let mut y = c.exec();
-
-    y.grad = Some(1.0);
-    bx.grad = Some(c.backward(y.grad.unwrap()));
-    ax.grad = Some(b.backward(bx.grad.unwrap()));
-    x.grad = Some(a.backward(ax.grad.unwrap()));
-
-    println!("{}", x.grad.unwrap());
-    //println!("v = {:?}", numeric_diff(&mut Square::new(), x, eps));
+    RefCell::borrow_mut(&y).grad = Some(1.0);
+    RefCell::borrow_mut(&y).backward();
+    println!("{}", x.borrow().grad.unwrap()); 
 }
